@@ -1,0 +1,670 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <title>notet_v1.1</title>
+
+    <script type="text/javascript" src="/eel.js"></script>
+
+
+  <link rel="stylesheet" href="css/style_notet.css" />
+  <link rel="stylesheet" href="css/style_jstree_default.css" />
+  <link rel="stylesheet" href="css/jquerysctipttop.css" type="text/css">
+  <link rel="stylesheet" href="css/tabs.css" type="text/css">
+
+</head>
+<body>
+
+<div class="container_toolbox"> 
+  <button id='about_BTN' class='modalBTN' data-modal="modal_about" style="width:100%; height: 20%; border-width: 2px; border-style: solid; margin-bottom: 2px;">About notet</button><!--
+  --><button id='newProject_BTN' class="fullBTN" onclick="getNewProjectName()">New Project</button><!-- 
+  --><button id="importProject_BTN" class="halfBTN" style="height: 17%" onclick="eel.importProject()">Import Project</button><!--
+  --><!-- <input type="file" id="importProject_INP" accept=".notetproject" style="display:none"> --><!--
+  --><button id='openProject_BTN' class="modalBTN" data-modal="modal_openProject" style="width: 50%; height:17% ">Open Project</button><!-- 
+  --><p id='projectName' style="width: 100%; text-align: center;"> No project choosed </p>
+  
+
+</div>
+
+
+<!-- ####################################################################################################################### -->
+
+<div id="container_sNn" class="container_sNn">
+  <div id="tabs_sNn" class = "tabs_sNn">
+  <button class="tablinks" disabled onclick="sourcesNnodes(event, 'sources')">Sources</button>
+  <button class="tablinks" disabled onclick="sourcesNnodes(event, 'nodes')">Nodes</button>
+  </div>
+
+  <div id="tableNtree"></div>
+
+<!--   <div id="sources_and_nodeTree" class='sources_and_nodeTree' ondragover="onDragOver(event)" ondrop="onDrop(event)"></div> -->
+</div>
+
+<!-- ####################################################################################################################### -->
+
+<div class="container_tabsNviewer"> 
+  <!-- Tab Headers Start -->
+  <ul class="tabs" id="tabSet">
+  <li><a href="#welcomeView">Welcome</a></li>
+
+  </ul>
+  <!-- Tab Headers End --> 
+  <!-- Tab Body Start -->
+    <div id="fileViewerContainer" class='viewer'>
+  <!-- <iframe id="pdfViewer" src="pdfjs-2.5.207-dist/web/viewer.html" style="width: 100%; height: 700px;" allowfullscreen="" webkitallowfullscreen=""></iframe> -->
+
+      <div id="welcomeView" style="width: 100%; height: 97%;">  </div>
+    </div>
+
+</div>
+<!-- Tab Body End --> 
+
+    <div id="modal_about" class="modal">
+      <div class="modal-content">
+        <div class="customPopup">
+          <a class="close">&times;</a>
+           <p style="text-align: center;"> notet<br>By Necip Asım ARSLAN - necipasimarslan@gmail.com<br>Version 1.1<br>All Rights Reserved © 2020"</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal_openProject" class="modal">
+      <div class="modal-content">
+        <div id="availableProjects" class="customPopup">
+        </div>
+      </div>
+    </div>
+
+
+
+  <script src="js/jquery.js"></script>
+	<script src="js/jquery-ui.js"></script>
+	<script src="js/notet_jstree.js"></script>
+  <script type="text/javascript" src="js/tdi.tabs.js"></script>
+	<script type="text/javascript" src="js/mousewheel.js"></script>
+	<script type="text/javascript" src="js/scrolltabs.js"></script>
+
+  <script>
+    var tabCounter_nbsas = 0 // This variable prevents overwritten tabs --> Added by nbsas | 20201028T122017TZ0300
+    var activeNodes = null
+	
+  dynaTabSet = $("#tabSet").dynatabs({
+            tabBodyID : 'fileViewerContainer',
+            showCloseBtn : true,
+            confirmDelete : true
+        });
+
+$(document).ready(function() {
+        // eel.LoadWelcome() // Whenever you are ready to publish v1.1
+    eel.check4Unpacked()
+        
+  $("#tabSet").click(function(e){
+      // activeContainer = $.getActiveTab().tabSet.slice(1)
+      activeContainer = $.getActiveTab().tabSet
+      // activeIframe = document.getElementById(activeContainer).firstElementChild.getAttribute('id')
+      var els = document.querySelector(`a[href="${activeContainer}"]`);
+      // eel.printOutPy(document.getElementById(activeContainer).outerHTML)
+      eel.tabActivated(activeContainer.slice(1), els.innerHTML)
+          });
+
+
+      let modalBtns = [...document.querySelectorAll(".modalBTN")];
+      modalBtns.forEach(function(btn) {
+        btn.onclick = function() {
+          if(btn.getAttribute('id') == 'openProject_BTN'){
+            eel.setAvailableProjects_PY_START()
+          }
+          let modal = btn.getAttribute('data-modal');
+          document.getElementById(modal).style.display = "block";
+        }
+      });
+      let closeBtns = [...document.querySelectorAll(".close")];
+      closeBtns.forEach(function(btn) {
+        btn.onclick = function() {
+          let modal = btn.closest('.modal');
+          modal.style.display = "none";
+        }
+      });
+      window.onclick = function(event) {
+        if(event.target.className === "modal") {
+          event.target.style.display = "none";
+        }
+      }
+    });
+
+eel.expose(setAvailableProjects_JS_END)
+function setAvailableProjects_JS_END(avps) {
+  avps_div = document.getElementById('availableProjects'); 
+  avps_div.innerHTML = "";
+  
+  exitBTN = document.createElement('a');
+  exitBTN.setAttribute('class', 'close');
+  exitBTN.textContent = '\u00D7'; // \u00D7 is equivalent of &times;
+  avps_div.appendChild(exitBTN);
+  // exitBTN.onclick = function() {
+  //   let modal = btn.closest('.modal');
+  //   modal.style.display = "none";
+  // }
+
+  for (var i = 0; i < avps.length; i++) {
+    var div = document.createElement('div')
+    div.setAttribute('style', 'width:90%; text-align:center; border-style:solid; border-width:2px;')
+
+    var lbl = document.createElement('label')
+    lbl.textContent = avps[i]
+    div.appendChild(txt)
+
+    openbtn = document.createElement('button')
+    openbtn.setAttribute('onclick',`openProject(${avps[i]}, this)`) 
+    openbtn.setAttribute('style',"margin-left:20px; margin-right:20px; width:20%; background-color:green;")
+    openbtn.textContent = 'Open'
+    div.appendChild(openbtn)
+
+    delbtn = document.createElement('button')
+    delbtn.setAttribute('onclick',`delProject(${avps[i]}, this.parentElement)`)
+    delbtn.setAttribute('style',"width:20%; background-color:red;")
+    delbtn.textContent = 'Delete'
+    div.appendChild(delbtn)
+
+    avps_div.appendChild(div)
+    // modalTxt += `<button onclick="eel.unpackProject(this.innerText)">${avps[i]}</button>`
+  }
+
+  // eel.printOutPy(modalTxt)
+
+  // $(`#availableProjects`).append(modalTxt)
+}
+
+function openProject(pName, btn) {
+  eel.unpackProject({'name':pName, 'isImport':false})
+
+  let modal = btn.closest('.modal');
+  modal.style.display = "none";
+
+}
+
+
+eel.expose(addNewTab)
+function addNewTab(title="New Tab")
+  {
+      $.addDynaTab({
+          tabID : 'tabSet',
+          type : 'html',
+          html : `<p>err:NoDoc${tabCounter_nbsas}</p>`,
+          params : {},
+          tabTitle : title
+      });
+      tabCounter_nbsas += 1
+   }
+
+
+function getNewProjectName(){
+    pName=prompt("Please enter new project name", "New Project");
+    if (pName==""){
+    alert('Please enter a valid project name')
+    getNewProjectName()
+  }
+    else if(pName == null){
+      // DO NOTHING because it's cancel
+    }  
+    else {
+    eel.createProject(pName)
+    alert(pName + " is created");
+    
+   }
+}
+
+
+eel.expose(setOpenedProject)
+function setOpenedProject(pName) {
+  document.getElementById('projectName').innerHTML = pName
+  
+  // document.getElementById('fileSelect').disabled = false
+  // document.getElementById('exportRef').disabled = false move this line to a function that checks if a node is opened
+  // document.getElementById('codeRef').disabled = false
+  $(".tablinks").prop('disabled', false);
+
+}
+
+
+function setAttributes(el, attrs) { // helper function to set multiple attributes at once
+  for(var key in attrs) {
+    el.setAttribute(key, attrs[key]);
+  }
+}
+
+
+function sourcesNnodes(evt, tabName) {
+  var tablinks;
+
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");tablinks
+  }
+  evt.currentTarget.className += " active";
+
+  tNt = document.getElementById('tableNtree');
+  tNt.innerHTML = "";
+ 
+  if(tabName =="sources"){
+  
+  importSource_btn = document.createElement('button')
+  setAttributes(importSource_btn, {'id':'importSource', 'class':'halfBTN', 'onclick':'eel.importSource()'})
+  importSource_btn.textContent = 'Import'
+  tNt.appendChild(importSource_btn);
+  // $("#fileSelect").prop('disabled', true);
+
+  // fileElem_inp = document.createElement('input')
+  // setAttributes(fileElem_inp, {'type':'file', 'id':'fileElem', 'accept':'.pdf', 'style':'display:none;'})
+  // tNt.appendChild(fileElem_inp);
+  // $("#fileElem").prop('multiple', true);
+
+  delSource_btn = document.createElement('button')
+  setAttributes(delSource_btn, {'id':'delSource', 'class':'halfBTN', 'onclick':'eel.delSource()'})
+  delSource_btn.textContent = 'Delete'
+  tNt.appendChild(delSource_btn)
+  // $("#delSource_btn").prop('disabled', true);
+
+  sNn = document.createElement('div');
+  setAttributes(sNn, {'id':'sources_and_nodeTree', 'class':'sources_and_nodeTree', 'ondragover': 'onDragOver(event)', 'ondrop':'onDrop(event)'})
+  tNt.appendChild(sNn)
+
+
+  //   e.preventDefault(); // prevent navigation to "#"
+  // }, false);
+
+  // fileElem_inp.addEventListener("change", handleFiles, false);
+
+  eel.displaySources_PY();
+  }
+
+
+
+  else if(tabName =="nodes"){
+
+  exportNode_btn = document.createElement('button')
+  setAttributes(exportNode_btn, {'id':'exportNode', 'class':'halfBTN'})
+  exportNode_btn.textContent = 'Export'
+  exportNode_btn.disabled = true
+  tNt.appendChild(exportNode_btn)
+
+  newNode_btn = document.createElement('button')
+  setAttributes(newNode_btn, {'id':'newNode', 'class':'halfBTN'})
+  newNode_btn.textContent = 'New Node'
+  tNt.appendChild(newNode_btn)
+
+
+
+  sNn = document.createElement('div');
+  setAttributes(sNn, {'id':'sources_and_nodeTree', 'class':'sources_and_nodeTree', 'ondragover': 'onDragOver(event)', 'ondrop':'onDrop(event)'})
+  tNt.appendChild(sNn)
+
+  eel.displayNodeTree_PY(); // Be careful! If displayNodeTree wasn't called before newNode function, it wont work at all !!
+
+  newNode_btn.onclick = function() { // 
+  $('#theTree').jstree(true).create_node('#', {}, "last"); // Finally I've found how create_node function in jstree.js works!!! YAAAYY! 20201102T143032TZ0300 
+    updateLocalNodeList()
+  };
+
+  }
+
+};
+
+eel.expose(displaySources_JS)
+function displaySources_JS(sourcesList) {
+  document.getElementById("sources_and_nodeTree").innerHTML = "<table id='sourcesTable' style='width:100%'></table>";
+
+	if(sourcesList.length == 1 && sourcesList[0].Name == null){
+	
+	let table = document.querySelector("table");
+	let data = Object.keys(sourcesList[0]);
+	generateTableHead(table, data); // then the head for create tbody
+	}
+	else{
+		
+	let table = document.querySelector("table");
+	let data = Object.keys(sourcesList[0]);
+	generateTable(table, sourcesList); // generate the table first
+	generateTableHead(table, data); // then the head for create tbody		
+	}
+
+	};
+
+eel.expose(displayNodeTree_JS)
+function displayNodeTree_JS(nodeList) {
+  document.getElementById("sources_and_nodeTree").innerHTML = "";
+
+	// if(Object.keys(nodeList).length === 0){
+ //    msg = "There is no nodes to show yet.\nClick 'New Node' to start!"
+
+ //    txt = document.createElement('p');
+ //    txt.setAttribute('style', 'margin-top:15px; text-align:center;')
+ //    txt.innerText = msg
+ //    document.getElementById("sources_and_nodeTree").appendChild(txt)
+
+	// }
+
+	
+		var div = document.createElement('div');		// Added on v1_5 and index7 for the error in disappearing nodeTree while switching tabs
+		div.setAttribute('id', 'theTree') // for update operations
+		document.getElementById("sources_and_nodeTree").appendChild(div);
+
+		$(div).jstree({
+	    "core" : {
+        "check_callback": true, // This is neccessary for a few things but most important one is creating new node
+        "data": nodeList
+
+	      	    },
+	    "plugins" : [ "dnd", "contextmenu", 'changed', 'unique', 'wholerow', 'state' ]
+		});
+
+		$(div).on("changed.jstree", function (e, data) {
+	      // eel.setActiveNode(data.changed.selected); // newly selected
+	      eel.setActiveNodes_PY($('#theTree').jstree(true).get_json('#', {flat:true})); // newly selected
+	      
+	    });
+
+	    $(div).bind("dblclick.jstree", function (event) {
+		    var tree = $(this).jstree();
+		    var node = tree.get_node(event.target);
+		    eel.generateNodeView(node['id'])
+		});
+
+
+
+};
+
+eel.expose(setActiveNodes_JS)
+function setActiveNodes_JS(nodes) {
+  activeNodes = nodes
+}
+
+	function generateTableHead(table, data) {
+	  let thead = table.createTHead();
+	  let row = thead.insertRow();
+	  for (let key of data) {
+	    let th = document.createElement("th");
+	    let text = document.createTextNode(key);
+	    th.appendChild(text);
+	    row.appendChild(th);
+	  }
+	}
+
+	function generateTable(table, data) {
+	  for (let element of data) {
+	    let row = table.insertRow();
+	    for (key in element) {
+	      let cell = row.insertCell();
+	      let text = document.createTextNode(element[key]);
+	      cell.appendChild(text);	      
+	    }
+   	    row.onclick = function () {
+        rowSelected(this);
+        };
+
+        row.ondblclick = function() {
+        eel.openSourceFile(this.innerHTML)
+
+        }
+
+	  }
+	}
+
+function rowSelected(el) {
+  if (el.className.indexOf('selected') >= 0) {
+    el.className = el.className.replace('selected',"");
+  }
+  else {
+  otherRows = document.getElementsByClassName('selected');
+  for(i = 0; i<otherRows.length; i++){
+	 otherRows[i].className = otherRows[i].className.replace('selected',"");
+  }
+    el.className  += 'selected';
+    eel.setSelectedSourceName(el.innerHTML)
+  }
+}
+
+
+
+
+function goToRefPDF(refData, nodeIframeID) {
+  eel.goToRefPDF(refData, nodeIframeID)
+};
+
+eel.expose(LoadNodeFile)
+function LoadNodeFile(newID, theElement, htmlData) { // This is the absent one in my embeeding pdf to my eel project adventure
+// document.getElementById(theElement).innerHTML = htmlData
+
+  document.getElementById(theElement).innerHTML = ""
+  
+  pdfjsframe = document.createElement('iframe');
+  pdfjsframe.setAttribute("id", newID);
+  pdfjsframe.setAttribute("srcdoc", htmlData);
+  pdfjsframe.setAttribute("style", "width: 100%; height: 100%;");
+  pdfjsframe.setAttribute("allowfullscreen", "");
+  pdfjsframe.setAttribute("wbkitallowfullscreen", "");
+
+  document.getElementById(theElement).appendChild(pdfjsframe);
+
+
+  $(`#${newID}`).load( function() { 
+    $(`#${newID}`).contents().find("body").find(".refButton").click( // This technique is amazing and the only way to add logic to iframe with srcdoc attribute! | Added by nbsas - 20201029T120435TZ0300 
+        function () {
+          goToRefPDF(this.parentElement.id, newID)
+        }
+    );
+
+    $(`#${newID}`).contents().find("body").find(".refMove").click( //  Added by nbsas - 20201101T110009TZ0300 
+        function () {
+          currentNodeID = this.parentElement.id
+          var indices = [];
+          for(var i=0; i<currentNodeID.length;i++) {if (currentNodeID[i] === "_") indices.push(i)}
+          currentNodeID = currentNodeID.substring(0, indices.slice(-1));
+
+          theNodes = ""
+          for (var i in activeNodes) {
+            if(i == currentNodeID) {delete activeNodes[i]} // Preventing from copying citation to node where it is already 
+            else{theNodes += '-' + activeNodes[i] + '\n'}
+          }
+          copyConfirmation = confirm(`The citation will be moved to:\n${theNodes}Do you confirm?`)
+          if(copyConfirmation) {
+            moveRef(this.parentElement.id, Object.keys(activeNodes))
+            this.parentElement.parentElement.removeChild(this.parentElement)
+          }
+        }
+    );
+
+    $(`#${newID}`).contents().find("body").find(".refCopy").click( //  Added by nbsas - 20201101T110009TZ0300 
+        function () {
+          currentNodeID = this.parentElement.id
+          var indices = [];
+          for(var i=0; i<currentNodeID.length;i++) {if (currentNodeID[i] === "_") indices.push(i)}
+          currentNodeID = currentNodeID.substring(0, indices.slice(-1));
+
+          theNodes = ""
+          for (var i in activeNodes) {
+            if(i == currentNodeID) {delete activeNodes[i]} // Preventing from copying citation to node where it is already 
+            else{theNodes += '-' + activeNodes[i] + '\n'}
+          }
+          copyConfirmation = confirm(`The citation will be copied to:\n${theNodes}Do you confirm?`)
+          if(copyConfirmation) {
+            copyRef(this.parentElement.id, Object.keys(activeNodes))
+          }
+        }
+    );
+
+    $(`#${newID}`).contents().find("body").find(".refDel").click( // Added by nbsas - 20201101T110047TZ0300 
+        function () {
+          delRef(this.parentElement.id)
+          this.parentElement.parentElement.removeChild(this.parentElement)
+        }
+    );
+});
+
+};
+
+function copyRef(citationData, targetNodes) {
+  eel.copyORmoveRef(citationData, targetNodes, 'c')
+}
+
+function moveRef(citationData, targetNodes) {
+  eel.copyORmoveRef(citationData, targetNodes, 'm')
+}
+
+function delRef(citationData) {
+  eel.delRef(citationData)
+}
+
+
+
+eel.expose(LoadWelcome)
+function LoadWelcome(base64Data) { // This is the absent one in my embeeding pdf to my eel project adventure
+  
+  pdfjsframe = document.createElement('iframe');
+  pdfjsframe.setAttribute("id", 'welcome');
+  pdfjsframe.setAttribute("src", `pdfjs-2.5.207-dist/web/viewer.html`);
+  pdfjsframe.setAttribute("style", "width: 100%; height: 100%;");
+  pdfjsframe.setAttribute("allowfullscreen", "");
+  pdfjsframe.setAttribute("wbkitallowfullscreen", "");
+
+  document.getElementById('welcomeView').appendChild(pdfjsframe);
+
+pdfjsframe.onload = function() { // This is the absent one in my embedding pdf to my eel project adventure
+  var pdfData = base64ToUint8Array(base64Data);
+  pdfjsframe.contentWindow.PDFViewerApplication.open(pdfData);
+}
+
+};
+
+
+eel.expose(LoadPdfDocument)
+function LoadPdfDocument(newID, theElement, base64Data) { // This is the absent one in my embeeding pdf to my eel project adventure
+document.getElementById(theElement).innerHTML = ""
+  
+  pdfjsframe = document.createElement('iframe');
+  pdfjsframe.setAttribute("id", newID);
+  pdfjsframe.setAttribute("src", `pdfjs-2.5.207-dist/web/viewer.html`);
+  pdfjsframe.setAttribute("style", "width: 100%; height: 100%;");
+  pdfjsframe.setAttribute("allowfullscreen", "");
+  pdfjsframe.setAttribute("wbkitallowfullscreen", "");
+
+  document.getElementById(theElement).appendChild(pdfjsframe);
+
+pdfjsframe.onload = function() { // This is the absent one in my embedding pdf to my eel project adventure
+  var pdfData = base64ToUint8Array(base64Data);
+  pdfjsframe.contentWindow.PDFViewerApplication.open(pdfData);
+}
+
+};
+
+eel.expose(openRefPDF)
+function openRefPDF(nodeIframeID, base64Data, pageNum) { // This is the absent one in my embeeding pdf to my eel project adventure
+  theElement = document.getElementById($.getActiveTab().tabSet.slice(1))
+  
+  if(theElement.querySelector("#refIframe") != null){ // Removing older refIframe
+    theElement.removeChild(document.getElementById('refIframe'))
+}
+  
+  eel.printOutPy(nodeIframeID)
+
+  document.getElementById(nodeIframeID).style.width = '44%' // shrinking iframe which includes node content
+  
+  ref_pdfjsframe = document.createElement('iframe');
+  ref_pdfjsframe.setAttribute("id", "refIframe");
+  ref_pdfjsframe.setAttribute("src", `pdfjs-2.5.207-dist/web/viewer.html#page=${pageNum}`);
+  ref_pdfjsframe.setAttribute("style", "position:relative; width: 55%; height: 100%;");
+  ref_pdfjsframe.setAttribute("allowfullscreen", "");
+  ref_pdfjsframe.setAttribute("wbkitallowfullscreen", "");
+
+  theElement.appendChild(ref_pdfjsframe);
+
+ref_pdfjsframe.onload = function() { // This is the absent one in my embedding pdf to my eel project adventure
+  var pdfData = base64ToUint8Array(base64Data);
+  ref_pdfjsframe.contentWindow.PDFViewerApplication.open(pdfData);
+}
+
+};
+
+
+function base64ToUint8Array(base64) {
+  var raw = atob(base64);
+
+  var uint8Array = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) {
+    uint8Array[i] = raw.charCodeAt(i);
+  }
+  return uint8Array;
+}
+
+
+
+
+
+
+
+// Drag and drop method for getting files
+function onDragOver(event) {
+  event.preventDefault();
+}
+
+function onDrop(event, color) {
+  event.preventDefault();
+
+  // Prevent default behavior (Prevent file from being opened)
+
+  window.alert(event.dataTransfer.files[0].name)
+
+  for (let i = 0; i < event.dataTransfer.files.length; i++) {
+  	addFile2Sources(event.dataTransfer.files[i])
+    }
+
+}
+
+ 
+
+// function handleFiles() {
+//     for (let i = 0; i < this.files.length; i++) {
+//     	addFile2Sources(this.files[i])
+
+//       // pathOfFile = URL.createObjectURL(this.files[i]);
+//       // eel.printOutPy(pathOfFile)
+//     }
+//   };
+
+
+
+
+// function addFile2Sources(file) {
+// 	// eel.printOutPy(URL.createObjectURL(file))
+//     var fReader = new FileReader();
+//     fReader.readAsDataURL(file);
+//     // console.log(input.files[0]);
+//     fReader.onloadend = function (event) {
+//         eel.addFile2Sources(file.name, event.target.result); // Do not try sending data as a whole dictionary, it won't work , it is asynchronious
+//     }
+// }
+ 
+ 
+function updateLocalNodeList(){
+	var v = $('#theTree').jstree(true).get_json('#', {flat:true})
+	// var mytext = JSON.stringify(v);
+	
+	eel.updateLocalNodeList(v) // will be purified and stored
+
+};
+eel.expose(updateLocalNodeList)
+
+
+eel.expose(alert_JS)
+function alert_JS(msg) {
+  alert(msg)
+}
+
+
+
+</script>
+
+</body>
+</html>
