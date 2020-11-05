@@ -6,7 +6,7 @@ Program aims to simplify coding nodes in social sciences. You as a researcher or
 Written with Python 3.7 and used eel and tkinter modules to create gui. tkinter is only used for get local files to Python, I tried to work with javascript for this operation it was so slow because of not getting absolute path from local pc.
 
 
-# How to use
+# How to run
 This version's executable not uploaded yet because of some improvements are still ongoing. So you can simply download all files in a folder and use 
 
 python notet_v1_1.py 
