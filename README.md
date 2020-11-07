@@ -12,6 +12,3 @@ This version's executable not uploaded yet because of some improvements are stil
 python notet_1.1.6.py 
 
 command to execute program. 
-
-
-Executable version and reqs.txt will be added soon.
